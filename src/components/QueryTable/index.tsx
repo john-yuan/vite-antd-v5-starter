@@ -315,7 +315,7 @@ function InnerQueryTable({
     }
   })
 
-  const { fields, scroll } = useColumns(columns, extraQueryFields)
+  const { fields, cols, scroll } = useColumns(columns, extraQueryFields)
 
   const ref = useRef({
     onSearch,
@@ -528,7 +528,7 @@ function InnerQueryTable({
         loading={state.loading}
         dataSource={state.data}
         scroll={scroll}
-        columns={columns}
+        columns={cols}
         rowSelection={rowSelection}
       />
       {!hidePagination && (

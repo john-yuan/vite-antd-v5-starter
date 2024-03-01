@@ -1,0 +1,64 @@
+.container {
+  background-color: #fff;
+  padding: 16px;
+  padding-bottom: 4px;
+  border-radius: 6px;
+  margin-bottom: 16px;
+  position: relative;
+  font-size: 14px;
+  min-height: 42px;
+
+  :global {
+    .ant-form-item-label {
+      padding-bottom: 4px;
+    }
+
+    .ant-form-item {
+      margin-bottom: 12px;
+    }
+  }
+}
+
+.grid {
+  column-gap: 16px;
+}
+
+.item {
+  &[data-hidden='true'] {
+    display: none;
+  }
+}
+
+.actions {
+  display: flex;
+  justify-content: end;
+  margin-top: 12px;
+  padding-bottom: 12px;
+  box-sizing: content-box;
+
+  height: 32px;
+  line-height: 32px;
+
+  > button {
+    flex-grow: 0;
+    flex-shrink: 0;
+    margin-left: 14px;
+  }
+
+  &[data-compact='true'] {
+    position: absolute;
+    right: 16px;
+    bottom: 16px;
+    padding-bottom: 0;
+  }
+}
+
+.toggle {
+  color: var(--primary-color);
+  cursor: pointer;
+  margin-left: 14px;
+
+  .anticon {
+    font-size: 12px;
+  }
+}

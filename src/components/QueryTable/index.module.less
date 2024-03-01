@@ -1,0 +1,66 @@
+.toolbar {
+  display: flex;
+}
+
+.title,
+.titleNode {
+  flex-grow: 1;
+  flex-shrink: 1;
+}
+
+.title {
+  font-size: 16px;
+  font-weight: bold;
+}
+
+.title,
+.action {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+.action {
+  flex-grow: 0;
+  flex-shrink: 0;
+  margin-left: 14px;
+}
+
+.icon {
+  cursor: pointer;
+
+  &:hover {
+    color: var(--primary-color);
+  }
+}
+
+.table {
+  :global {
+    .ant-table .ant-table-container .ant-table-thead > tr > th,
+    .ant-table .ant-table-container .ant-table-tbody > tr > th,
+    .ant-table .ant-table-container .ant-table-tbody > tr > td,
+    .ant-table .ant-table-container tfoot > tr > th,
+    .ant-table .ant-table-container tfoot > tr > td {
+      padding: 12px 14px;
+    }
+  }
+}
+
+.emptyPage,
+.numberPage,
+.cursorPage {
+  padding: 16px 14px !important;
+  margin-top: 0 !important;
+  background: #fcfcfc;
+  border-bottom-left-radius: 8px;
+  border-bottom-right-radius: 8px;
+  margin-bottom: 16px;
+}
+
+.emptyPage {
+  height: 22px;
+  line-height: 22px;
+  text-align: right;
+  color: #444;
+  box-sizing: content-box;
+}

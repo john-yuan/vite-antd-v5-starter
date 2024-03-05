@@ -14,6 +14,9 @@ dependencies:
   clsx:
     specifier: ^2.1.0
     version: 2.1.0
+  fetch-with-json:
+    specifier: ^1.0.0
+    version: 1.0.0
   react:
     specifier: ^18.2.0
     version: 18.2.0
@@ -1698,6 +1701,10 @@ packages:
     dependencies:
       reusify: 1.0.4
     dev: true
+
+  /fetch-with-json@1.0.0:
+    resolution: {integrity: sha512-dvheX+Ue/7Ag3snYnsL9t+Dv1dYtOq4t8jKa0/MFeiK03bgKATiloWvMDfnOXXamTO8NePTKt1Ibe+GBWP0+5g==}
+    dev: false
 
   /file-entry-cache@6.0.1:
     resolution: {integrity: sha512-7Gps/XWymbLk2QLYK4NzpMOrYjMhdIxXuIvy2QBsLE6ljuodKvdkWs/cpyJJ3CVIVpH0Oi1Hvg1ovbMzLdFBBg==}

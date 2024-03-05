@@ -1,6 +1,10 @@
-# vite-react-ts-starter
+# vite-antd-v5-starter
 
-Vite React TypeScript starter.
+The starter for vite + antd.
+
+## Getting started
+
+Once you have cloned this repository, please search the `// TODO` tags and follow the comments to implement the related logic.
 
 ## Commands
 
@@ -23,10 +27,3 @@ pnpm lint:fix
 # format and lint staged files
 pnpm lint-staged
 ```
-
-## Configured tools
-
-- [editorconfig](https://editorconfig.org/)
-- [eslint](https://eslint.org/)
-- [lint-staged](https://github.com/okonet/lint-staged)
-- [prettier](https://prettier.io/)

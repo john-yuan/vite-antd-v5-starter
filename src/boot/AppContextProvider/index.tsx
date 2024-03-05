@@ -1,11 +1,11 @@
-import { Alert, Spin } from 'antd'
+import { Alert } from 'antd'
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { AppContext, DEFAULT_APP_STATE } from '@/context/AppContext'
 import { getInitialAppState } from '@/getInitialAppState'
 import type { AppContextValue } from '@/context/AppContext'
 import type { AppState } from '@/types'
 import Login from '../Login'
-import css from './index.module.less'
+import Loading from '../Loading'
 
 export default function AppContextProvider({
   children
@@ -63,25 +63,20 @@ export default function AppContextProvider({
   }
 
   if (state.loading) {
-    return (
-      <div className={css.loading}>
-        <Spin size="small" />
-      </div>
-    )
+    return <Loading />
   }
 
   if (state.hasError) {
     return (
-      <div className={css.error}>
-        <Alert
-          type="error"
-          message={state.errorMessage}
-          closable
-          onClick={logout}
-        />
-      </div>
+      <Alert
+        closable
+        type="error"
+        message={state.errorMessage}
+        style={{ margin: 20 }}
+        onClick={logout}
+      />
     )
   }
 
-  return <AppContext.Provider value={context}>{children}</AppContext.Provider>
+  return <AppContext.Provider value={context} children={children} />
 }

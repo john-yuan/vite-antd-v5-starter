@@ -1,4 +1,5 @@
 import { routes } from '@/routes'
+import { sleep } from '@/utils/sleep'
 import type { AppState } from '@/types'
 
 /**
@@ -8,10 +9,11 @@ import type { AppState } from '@/types'
  * @returns return a `AppState` if user logged in, otherwise returns `null`.
  */
 export async function getInitialAppState(): Promise<AppState | null> {
-  // TODO implement
-  await new Promise((resolve) => setTimeout(resolve, 500))
+  // TODO initialize the app state.
 
-  if (localStorage.getItem('mock:login') === 'yes') {
+  await sleep(500)
+
+  if (localStorage.getItem('auth_token') === 'yes') {
     return {
       routes,
       currentUser: {

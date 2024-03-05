@@ -1,8 +1,20 @@
 import { useEffect, useState } from 'react'
 import { Alert, Button, Input } from 'antd'
 import css from './index.module.less'
+import { sleep } from '@/utils/sleep'
 
-export default function Login({ onSuccess }: { onSuccess: () => void }) {
+export interface Props {
+  /**
+   * The callback function to call on login success.
+   */
+  onSuccess: () => void
+}
+
+/**
+ * The login page component. When the user is unauthorized, this page will
+ * be displayed.
+ */
+export default function Login({ onSuccess }: Props) {
   const [state, setState] = useState<{
     submitting?: boolean
     error?: boolean
@@ -11,17 +23,17 @@ export default function Login({ onSuccess }: { onSuccess: () => void }) {
   const [input, setInput] = useState({ account: '', password: '' })
 
   const handleLogin = async () => {
-    // TODO implement
+    // TODO handle the login event.
 
     const account = input.account.trim()
     const password = input.password
 
     if (account && password && !state.submitting) {
       setState({ submitting: true })
-      await new Promise((resolve) => setTimeout(resolve, 500))
+      await sleep(500)
       if (input.account === 'admin' && input.password === '123456') {
         setState({})
-        localStorage.setItem('mock:login', 'yes')
+        localStorage.setItem('auth_token', 'yes')
         onSuccess()
       } else {
         setState({ error: true })

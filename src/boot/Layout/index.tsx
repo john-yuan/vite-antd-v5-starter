@@ -83,7 +83,8 @@ function SiteHeader() {
                   width: 400,
                   children: <div>确认退出登录？</div>,
                   onConfirm: () => {
-                    localStorage.removeItem('mock:login')
+                    // TODO handle the logout event
+                    localStorage.removeItem('auth_token')
                     logout()
                   }
                 })

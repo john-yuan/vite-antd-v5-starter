@@ -1,7 +1,7 @@
 import clsx from 'clsx'
-import type { CSSProperties} from 'react';
 import { useCallback, useMemo } from 'react'
 import { useResponsiveGridCalculator } from './hooks'
+import type { CSSProperties } from 'react'
 
 import css from './index.module.less'
 

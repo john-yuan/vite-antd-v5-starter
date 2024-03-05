@@ -1,4 +1,4 @@
-import { Spin } from 'antd'
+import { Alert, Spin } from 'antd'
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { AppContext, DEFAULT_APP_STATE } from '@/context/AppContext'
 import { getInitialAppState } from '@/getInitialAppState'
@@ -12,6 +12,7 @@ export default function AppContextProvider({
 }: {
   children?: React.ReactNode
 }) {
+  const [appState, setAppState] = useState<AppState>(DEFAULT_APP_STATE)
   const [state, setState] = useState<{
     loading?: boolean
     hasError?: boolean
@@ -19,11 +20,11 @@ export default function AppContextProvider({
     unauthorized?: boolean
   }>({ loading: true })
 
-  const [appState, setAppState] = useState<AppState>(DEFAULT_APP_STATE)
   const logout = useCallback(() => {
     setState({ unauthorized: true })
     setAppState(DEFAULT_APP_STATE)
   }, [])
+
   const context = useMemo<AppContextValue>(
     () => ({
       appState,
@@ -34,6 +35,7 @@ export default function AppContextProvider({
   )
 
   const init = useCallback(() => {
+    setState((prev) => (prev.loading ? prev : { loading: true }))
     getInitialAppState()
       .then((initialAppState) => {
         if (initialAppState) {
@@ -57,20 +59,26 @@ export default function AppContextProvider({
   }, [])
 
   if (state.unauthorized) {
-    return (
-      <Login
-        onSuccess={() => {
-          setState({ loading: true })
-          init()
-        }}
-      />
-    )
+    return <Login onSuccess={init} />
   }
 
   if (state.loading) {
     return (
       <div className={css.loading}>
         <Spin size="small" />
+      </div>
+    )
+  }
+
+  if (state.hasError) {
+    return (
+      <div className={css.error}>
+        <Alert
+          type="error"
+          message={state.errorMessage}
+          closable
+          onClick={logout}
+        />
       </div>
     )
   }

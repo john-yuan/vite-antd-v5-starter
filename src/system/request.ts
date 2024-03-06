@@ -13,6 +13,20 @@ export function getAuthToken() {
   return localStorage.getItem(STORAGE_KEY)
 }
 
+export function getErrorMessage(err?: any, fallback?: string) {
+  const defaultMsg = fallback || 'Unknown error.'
+
+  if (err && typeof err.message === 'string') {
+    return err.message || defaultMsg
+  }
+
+  if (typeof err === 'string') {
+    return err || defaultMsg
+  }
+
+  return defaultMsg
+}
+
 function checkRequestError(res: FetchResponse) {
   const json = res.json as any
 
@@ -37,24 +51,12 @@ function checkRequestError(res: FetchResponse) {
       return new Error('Http Error: 504 Gateway Timeout')
     }
 
-    return new Error('Http Error: ' + res.status + ' Request error.')
+    return new Error(
+      'Http Error: ' + res.status + ' ' + (res.statusText || 'Request error')
+    )
   }
 
   return null
-}
-
-function getErrorMessage(err?: any, fallback?: string) {
-  const defaultMsg = fallback || 'Unknown error.'
-
-  if (err && typeof err.message === 'string') {
-    return err.message || defaultMsg
-  }
-
-  if (typeof err === 'string') {
-    return err || defaultMsg
-  }
-
-  return defaultMsg
 }
 
 function wrapRequestError(err: Error, res: FetchResponse) {

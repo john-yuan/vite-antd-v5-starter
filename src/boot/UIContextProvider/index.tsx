@@ -87,6 +87,18 @@ export default function UIContextProvider({
   return (
     <ModalContext.Provider value={showModal}>
       {children}
+      {modals.some((el) => el.open) ? (
+        <div
+          style={{
+            position: 'fixed',
+            left: 0,
+            top: 0,
+            right: 0,
+            bottom: 0,
+            zIndex: 10
+          }}
+        />
+      ) : null}
       {modals.map((el) => (
         <Modal
           {...el.props}

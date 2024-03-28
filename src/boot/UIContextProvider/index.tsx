@@ -77,7 +77,11 @@ export default function UIContextProvider({
       }
     }
 
-    setModals((prev) => [...prev, { key, open: true, props, onCancel }])
+    setModals((prev) => {
+      const next = prev.filter((el) => el.open)
+      next.push({ key, open: true, props, onCancel })
+      return next
+    })
   }, [])
 
   return (

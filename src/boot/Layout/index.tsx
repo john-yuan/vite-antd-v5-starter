@@ -158,6 +158,24 @@ function SiteSidebar({
     [computed, navigate]
   )
 
+  useEffect(() => {
+    setOpenKeys((prev) => {
+      if (prev === route?.parentKeys) {
+        return prev
+      }
+
+      const next = [...prev]
+
+      route?.parentKeys.forEach((parentKey) => {
+        if (!next.includes(parentKey)) {
+          next.push(parentKey)
+        }
+      })
+
+      return next.length === prev.length ? prev : next
+    })
+  }, [route])
+
   return (
     <aside className={css.sidebar}>
       <Menu

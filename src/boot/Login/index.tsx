@@ -42,7 +42,11 @@ export default function Login({ onSuccess }: Props) {
   }
 
   useEffect(() => {
+    const prevTitle = document.title
     document.title = 'Login'
+    return () => {
+      document.title = prevTitle
+    }
   }, [])
 
   return (

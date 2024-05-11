@@ -10,6 +10,6 @@ export type ModalOptions = Omit<ModalProps, 'ref'> & {
   ref?: ModalRef
 }
 
-export type ShowModalFn = (options: ModalOptions) => void
+export type ShowModalFn = (options: ModalOptions) => () => void
 
-export const ModalContext = createContext<ShowModalFn>(() => {})
+export const ModalContext = createContext<ShowModalFn>(() => () => {})

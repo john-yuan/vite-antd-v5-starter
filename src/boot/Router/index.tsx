@@ -56,11 +56,13 @@ export default function Router() {
           )
         }
 
-        pageRoutes.push({
-          id: key,
-          path: route.path,
-          element: <Layout routes={resolvedRoutes} route={resolved} />
-        })
+        if (route.path) {
+          pageRoutes.push({
+            id: key,
+            path: route.path,
+            element: <Layout routes={resolvedRoutes} route={resolved} />
+          })
+        }
 
         return resolved
       })
@@ -70,6 +72,8 @@ export default function Router() {
 
     const createRouter =
       ROUTER_TYPE === 'hash' ? createHashRouter : createBrowserRouter
+
+    console.log(pageRoutes)
 
     return createRouter([
       {

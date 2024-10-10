@@ -151,11 +151,59 @@ export default function QueryTablePage() {
       },
       {
         key: 'title',
-        title: 'Title'
+        title: '标题',
+        width: 320
+      },
+      {
+        key: 'description',
+        title: '描述',
+        defaultHidden: true
+      },
+      {
+        key: 'category',
+        title: '类目'
+      },
+      {
+        key: 'brand',
+        title: '品牌'
+      },
+      {
+        key: 'price',
+        title: '价格'
+      },
+      {
+        key: 'discount',
+        title: '折扣'
+      },
+      {
+        key: 'returnPolicy',
+        title: '退货政策'
+      },
+      {
+        key: 'stock',
+        title: '库存'
+      },
+      {
+        key: 'date',
+        title: '上市日期'
+      },
+      {
+        key: 'tags',
+        title: '商品标签'
+      },
+      {
+        key: 'sales',
+        title: '最近一月销量',
+        width: 150
+      },
+      {
+        key: 'rating',
+        title: '评分'
       },
       {
         key: 'op',
-        title: 'Operation'
+        title: '操作',
+        fixed: 'right'
       }
     ],
     []

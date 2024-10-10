@@ -14,32 +14,34 @@ import Table from 'antd/es/table'
 import QueryForm from '../QueryForm'
 import CursorPagination from '../CursorPagination'
 import NumberPagination from '../NumberPagination'
-import { ReloadOutlined } from '@ant-design/icons'
+import { ReloadOutlined, SettingOutlined } from '@ant-design/icons'
 import { useQueryFormRef } from '../QueryForm/hooks'
+import type { ColumnInfo } from './components/QueryTableSettings';
+import QueryTableSettings from './components/QueryTableSettings'
+import { Popover } from 'antd'
 import css from './index.module.less'
 
 const MemoedTable = React.memo(Table)
 export type RowSelection<T = any> = Required<TableProps<T>>['rowSelection']
 
-export type ColumnInfo = {
-  key: string
-  name?: string | React.ReactNode
-  fixed?: 'left' | 'right'
-  hidden?: boolean
-  hideInSettings?: boolean
-}
-
 function Toolbar({
   title,
   titleNode,
   extraToolbarItems,
-  reload
+  reload,
+  columns,
+  setColumns,
+  onReset
 }: {
   title?: string
   titleNode?: React.ReactNode
   extraToolbarItems?: QueryTableExtraItem[]
+  columns: ColumnInfo[]
+  setColumns: (columns: ColumnInfo[]) => void
+  onReset: () => void
   reload?: () => void
 }) {
+  const [settingsVisible, setSettingsVisible] = useState(false)
   let text = title
 
   if (titleNode) {
@@ -55,11 +57,38 @@ function Toolbar({
           {el.content}
         </div>
       ))}
+
       {reload ? (
         <div className={css.action}>
           <ReloadOutlined className={css.icon} onClick={reload} />
         </div>
       ) : null}
+      <div className={css.action}>
+        <Popover
+          open={settingsVisible}
+          onOpenChange={setSettingsVisible}
+          placement="leftBottom"
+          align={{ offset: [-10, -7] }}
+          trigger={['click']}
+          rootClassName={css.overlay}
+          content={
+            <QueryTableSettings
+              listClassName={css.list}
+              columns={columns}
+              onReset={() => {
+                setSettingsVisible(false)
+                onReset()
+              }}
+              onChange={(cols) => {
+                setSettingsVisible(false)
+                setColumns(cols)
+              }}
+            />
+          }
+        >
+          <SettingOutlined />
+        </Popover>
+      </div>
     </div>
   )
 }
@@ -103,6 +132,7 @@ function useColumns(columns: QueryTableColumn[]) {
         key: colKey,
         name: col.settingName || '',
         fixed: col.fixed,
+        hidden: col.defaultHidden,
         hideInSettings: col.hideInSettings
       }
 
@@ -309,7 +339,57 @@ function InnerQueryTable({
     }
   })
 
-  const { cols, scroll } = useColumns(columns)
+  const {
+    settingColumns: rawSettingColumns,
+    columnMap,
+    scroll
+  } = useColumns(columns)
+  const [settingColumns, setSettingColumns] = useState(rawSettingColumns)
+
+  useEffect(() => {
+    setSettingColumns(rawSettingColumns)
+  }, [rawSettingColumns])
+
+  const finalColumns = useMemo(() => {
+    const leftCols: ColumnInfo[] = []
+    const centerCols: ColumnInfo[] = []
+    const rightCols: ColumnInfo[] = []
+
+    settingColumns.forEach((el) => {
+      if (el.hideInSettings ? true : !el.hidden) {
+        if (el.fixed === 'left') {
+          leftCols.push(el)
+        } else if (el.fixed === 'right') {
+          rightCols.push(el)
+        } else {
+          centerCols.push(el)
+        }
+      }
+    })
+
+    const finalCols: ColumnType<any>[] = []
+    const add = (list: ColumnInfo[]) => {
+      list.forEach((el) => {
+        const col = columnMap[el.key]
+        if (col) {
+          finalCols.push(
+            col.fixed !== el.fixed
+              ? {
+                  ...col,
+                  fixed: el.fixed
+                }
+              : col
+          )
+        }
+      })
+    }
+
+    add(leftCols)
+    add(centerCols)
+    add(rightCols)
+
+    return finalCols
+  }, [settingColumns, columnMap])
 
   const ref = useRef({
     onSearch,
@@ -445,6 +525,9 @@ function InnerQueryTable({
         titleNode={titleNode}
         extraToolbarItems={toolbar}
         reload={execSearch}
+        columns={settingColumns}
+        setColumns={setSettingColumns}
+        onReset={() => setSettingColumns(rawSettingColumns)}
       />
     )
   }, [title, titleNode, toolbar, execSearch])
@@ -489,6 +572,7 @@ function InnerQueryTable({
 
   const total =
     paginationMode === 'cursor' ? cursorPage.total : numberPage.total
+
   const sticky = useMemo(
     () =>
       stickyOffset
@@ -522,7 +606,7 @@ function InnerQueryTable({
         loading={state.loading}
         dataSource={state.data}
         scroll={scroll}
-        columns={cols}
+        columns={finalColumns}
         rowSelection={rowSelection}
       />
       {rawPaginationMode === 'number' || rawPaginationMode === 'cursor' ? (

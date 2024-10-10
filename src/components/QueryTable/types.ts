@@ -107,6 +107,11 @@ export interface QueryTableColumn<T = any> {
   align?: 'left' | 'right' | 'center'
 
   /**
+   * 默认隐藏
+   */
+  defaultHidden?: boolean
+
+  /**
    * 指定一个用于渲染当前单元格数据的组件
    */
   component?: ComponentType<{ data: T }>

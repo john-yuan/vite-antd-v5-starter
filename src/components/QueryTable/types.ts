@@ -1,6 +1,5 @@
 import type React from 'react'
 import type { ComponentType } from 'react'
-import type { QueryFormField } from '../QueryForm/types'
 
 export interface QueryTableRef {
   reload: () => void
@@ -61,19 +60,14 @@ export type QueryTableSearchFn<T = any, P extends Record<string, any> = any> = (
   params: QueryTableParams<P>
 ) => Promise<QueryTableSearchResult<T>>
 
-export interface QueryTableField {
-  order?: number
-  field: QueryFormField
-}
-
 export interface QueryTableColumn<T = any> {
   /**
-   * key，通常不用填写，如果不填写默认使用 dataIndex
+   * 如果不填写默认使用 dataIndex
    */
   key?: string
 
   /**
-   * 透传给 ProTable，用于取数据
+   * 透传给 ProTable，用于取数据，如果不填写默认使用 key
    */
   dataIndex?: string
 
@@ -101,16 +95,6 @@ export interface QueryTableColumn<T = any> {
    * 列宽
    */
   width?: number
-
-  /**
-   * 是否启用搜索（默认不启用），如果启用，会根据当前信息生成搜索组件，如需自定义搜索组件，请定义为一个对象
-   */
-  query?: boolean | Partial<QueryFormField>
-
-  /**
-   * 搜索字段的排序
-   */
-  queryOrder?: number
 
   /**
    * 数据映射

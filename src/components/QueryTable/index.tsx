@@ -5,7 +5,6 @@ import type { CursorPageChangeEvent, CursorPageInfo } from '../CursorPagination'
 import type {
   QueryTableColumn,
   QueryTableExtraItem,
-  QueryTableField,
   QueryTablePageInfo,
   QueryTableParams,
   QueryTableRef,
@@ -65,14 +64,10 @@ function Toolbar({
   )
 }
 
-function useColumns(
-  columns: QueryTableColumn[],
-  extraQueryFields?: QueryTableField[]
-) {
+function useColumns(columns: QueryTableColumn[]) {
   return useMemo(() => {
     let totalWidth = 0
 
-    const queryFields: QueryTableField[] = []
     const settingColumns: ColumnInfo[] = []
     const columnMap: Record<string, ColumnType<any>> = {}
 
@@ -92,9 +87,20 @@ function useColumns(
         render = (_, row) => <ColComponent data={row} />
       }
 
-      const dataIndex = col.dataIndex || col.key
+      let colKey = col.key ?? col.dataIndex
+
+      if (colKey == null) {
+        if (typeof col.title === 'string' && col.title) {
+          colKey = col.title
+        } else if (typeof col.settingName === 'string' && col.settingName) {
+          colKey = col.settingName
+        } else {
+          colKey = `${index}`
+        }
+      }
+
       const item: ColumnInfo = {
-        key: dataIndex || `${index}`,
+        key: colKey,
         name: col.settingName || '',
         fixed: col.fixed,
         hideInSettings: col.hideInSettings
@@ -110,46 +116,15 @@ function useColumns(
         }
       }
 
-      if (col.query) {
-        if (col.query === true) {
-          if (dataIndex) {
-            const field: QueryFormField = {
-              label: dataIndex,
-              name: dataIndex
-            }
-            if (typeof col.title === 'string') {
-              field.label = col.title
-            }
-            queryFields.push({ order: col.queryOrder, field })
-          }
-        } else {
-          const field: QueryFormField = {
-            label: col.query.label || '',
-            name: col.query.name || dataIndex || '',
-            ...col.query
-          }
-          if (!field.label) {
-            if (typeof col.title === 'string') {
-              field.label = col.title
-            } else {
-              field.label = dataIndex || ''
-            }
-          }
-          if (field.name) {
-            queryFields.push({ order: col.queryOrder, field })
-          }
-        }
-      }
-
       if (!render && col.valueEnum) {
         const map = col.valueEnum
         render = (val: any) => <>{map[val]}</>
       }
 
       const finalCol: ColumnType<any> = {
-        key: col.key || col.dataIndex,
-        dataIndex: col.dataIndex || col.key,
-        title: col.title || col.dataIndex || col.key,
+        key: colKey,
+        dataIndex: col.dataIndex ?? col.key,
+        title: col.title ?? col.dataIndex ?? col.key,
         fixed: col.fixed,
         align: col.align,
         width,
@@ -157,39 +132,61 @@ function useColumns(
       }
 
       if (finalCol.key) {
-        columnMap[finalCol.key as string] = finalCol
+        columnMap[colKey] = finalCol
       }
 
       return finalCol
     })
 
-    if (extraQueryFields) {
-      extraQueryFields.forEach((el) => {
-        queryFields.push(el)
-      })
-    }
-
-    queryFields.sort((a, b) => (a.order || 0) - (b.order || 0))
-
     return {
       cols,
       columnMap,
       settingColumns,
-      scroll: { x: totalWidth },
-      fields: queryFields.map((el) => el.field)
+      scroll: { x: totalWidth }
     }
-  }, [columns, extraQueryFields])
+  }, [columns])
 }
 
 export interface Props {
+  /**
+   * 查询表达字段列表，如果不设置或者长度为 0，则不显示查询表单
+   */
+  queryFields?: QueryFormField[]
+
+  /**
+   * 表格的列定义
+   */
   columns: QueryTableColumn[]
-  extraQueryFields?: QueryTableField[]
+
+  /**
+   * 用于获取每行数据 key 的属性名称，默认为 id
+   */
   rowKey?: string
+
+  /**
+   * 表格引用，可用于出发搜索等
+   */
   tableRef?: QueryTableRef
-  defaultPageSize?: 10 | 20 | 50 | 100
+
+  /**
+   * 初始分页大小，默认为 50
+   */
+  initialPageSize?: 10 | 20 | 50 | 100
+
+  /**
+   * 表格标题
+   */
   title?: string
+
+  /**
+   * 表格标题，优先级高于 title
+   */
   titleNode?: React.ReactNode
-  extraToolbarItems?: QueryTableExtraItem[]
+
+  /**
+   * 右上角工具栏
+   */
+  toolbar?: QueryTableExtraItem[]
 
   /**
    * 分页模式
@@ -197,12 +194,7 @@ export interface Props {
    * - `number` 数字模式
    * - `cursor` 游标模式
    */
-  paginationMode?: 'number' | 'cursor'
-
-  /**
-   * 是否隐藏分页
-   */
-  hidePagination?: boolean | 'show-total-only'
+  paginationMode?: 'number' | 'cursor' | 'hidden' | 'show-total-only'
 
   /**
    * 是否隐藏搜索表单
@@ -263,14 +255,13 @@ export interface Props {
 function InnerQueryTable({
   title,
   titleNode,
-  extraToolbarItems,
+  toolbar,
   columns,
-  extraQueryFields,
+  queryFields,
   rowKey,
   tableRef,
-  defaultPageSize,
-  paginationMode = 'number',
-  hidePagination,
+  initialPageSize,
+  paginationMode: rawPaginationMode = 'number',
   hideForm,
   hideTitle,
   manual,
@@ -289,7 +280,7 @@ function InnerQueryTable({
   }>({ loading: false, data: initialData || [] })
 
   const [cursorPage, setCursorPage] = useState<CursorPageInfo>({
-    size: defaultPageSize || 50
+    size: initialPageSize || 50
   })
 
   const [numberPage, setNumberPage] = useState<{
@@ -300,8 +291,11 @@ function InnerQueryTable({
   }>({
     page: 1,
     total: 0,
-    size: defaultPageSize || 50
+    size: initialPageSize || 50
   })
+
+  const paginationMode: 'number' | 'cursor' =
+    rawPaginationMode === 'cursor' ? 'cursor' : 'number'
 
   const paramsRef = useRef<QueryTableParams>({
     paginationMode,
@@ -315,12 +309,12 @@ function InnerQueryTable({
     }
   })
 
-  const { fields, cols, scroll } = useColumns(columns, extraQueryFields)
+  const { cols, scroll } = useColumns(columns)
 
   const ref = useRef({
     onSearch,
     cursorPage,
-    defaultPageSize,
+    initialPageSize,
     reqLock: 0
   })
 
@@ -449,11 +443,11 @@ function InnerQueryTable({
       <Toolbar
         title={title}
         titleNode={titleNode}
-        extraToolbarItems={extraToolbarItems}
+        extraToolbarItems={toolbar}
         reload={execSearch}
       />
     )
-  }, [title, titleNode, extraToolbarItems, execSearch])
+  }, [title, titleNode, toolbar, execSearch])
 
   const initRef = useRef({ formRef, hideForm, execSearch, manual, initialData })
 
@@ -507,17 +501,17 @@ function InnerQueryTable({
 
   return (
     <>
-      {!hideForm && (
+      {!hideForm && queryFields?.length ? (
         <QueryForm
           manual
           formRef={formRef}
-          fields={fields}
+          fields={queryFields}
           loading={state.loading}
           getResetValues={getResetValues}
           onSearch={handleSearch}
           storageKey={storageKey ? `${storageKey}_closed` : undefined}
         />
-      )}
+      ) : null}
       {between}
       <MemoedTable
         sticky={sticky}
@@ -531,7 +525,7 @@ function InnerQueryTable({
         columns={cols}
         rowSelection={rowSelection}
       />
-      {!hidePagination && (
+      {rawPaginationMode === 'number' || rawPaginationMode === 'cursor' ? (
         <>
           {paginationMode === 'cursor' ? (
             <CursorPagination
@@ -547,12 +541,15 @@ function InnerQueryTable({
             />
           )}
         </>
-      )}
-      {hidePagination === 'show-total-only' && (
-        <div className={css.emptyPage}>
+      ) : null}
+      {rawPaginationMode === 'show-total-only' ? (
+        <div className={css.totalPage}>
           {total != null ? `共 ${total} 条数据` : null}
         </div>
-      )}
+      ) : null}
+      {rawPaginationMode === 'hidden' ? (
+        <div className={css.emptyPage} />
+      ) : null}
     </>
   )
 }

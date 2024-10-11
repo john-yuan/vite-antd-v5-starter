@@ -227,11 +227,6 @@ export interface Props {
   paginationMode?: 'number' | 'cursor' | 'hidden' | 'show-total-only'
 
   /**
-   * 是否隐藏搜索表单
-   */
-  hideForm?: boolean
-
-  /**
    * 是否隐藏标题
    */
   hideTitle?: boolean
@@ -292,7 +287,6 @@ function InnerQueryTable({
   tableRef,
   initialPageSize,
   paginationMode: rawPaginationMode = 'number',
-  hideForm,
   hideTitle,
   manual,
   initialData,
@@ -532,6 +526,7 @@ function InnerQueryTable({
     [paramsRef, execSearch]
   )
 
+  const hideForm = !queryFields?.length
   const initRef = useRef({ formRef, hideForm, execSearch, manual, initialData })
 
   initRef.current.execSearch = execSearch
@@ -583,6 +578,15 @@ function InnerQueryTable({
     [stickyOffset]
   )
 
+  const spinning = state.loading
+  const spinProps = useMemo(
+    () => ({
+      spinning,
+      size: 'small' as const
+    }),
+    [spinning]
+  )
+
   return (
     <>
       {!hideForm && queryFields?.length ? (
@@ -617,7 +621,7 @@ function InnerQueryTable({
         }
         pagination={false}
         rowKey={rowKey || 'id'}
-        loading={state.loading}
+        loading={spinProps}
         dataSource={state.data}
         scroll={scroll}
         columns={finalColumns}

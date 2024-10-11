@@ -112,7 +112,7 @@ export default function CursorPagination(props: Props) {
       )}
       {props.total ? <div className={css.info}>共 {total} 条数据</div> : null}
       <div>
-        <Button.Group>
+        <Button.Group size="small">
           <Button disabled={!hasPreviousPage} onClick={onStart}>
             首页
           </Button>
@@ -126,10 +126,11 @@ export default function CursorPagination(props: Props) {
           options={OPTIONS}
           value={props.size || 50}
           onChange={onSizeChange}
+          size="small"
         />
       </div>
       <div>
-        <Button.Group>
+        <Button.Group size="small">
           <Button onClick={onNext} disabled={!hasNextPage}>
             下一页
           </Button>

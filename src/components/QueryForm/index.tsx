@@ -104,7 +104,7 @@ export default function QueryForm({
   const [form] = Form.useForm()
   const [columnCount, setColumnCount] = useState(0)
   const [collapsed, setCollapsed] = useState(() =>
-    storageKey ? localStorage.read(storageKey) === 'Y' : defaultCollapsed
+    storageKey ? localStorage.getItem(storageKey) === 'Y' : defaultCollapsed
   )
   const ref = useRef({ form, fields, onSearch, getResetValues })
   const fieldCount = fields ? fields.length : 0
@@ -159,7 +159,7 @@ export default function QueryForm({
       const next = !prev
 
       if (storageKey) {
-        localStorage.write(storageKey, next ? 'Y' : 'N')
+        localStorage.setItem(storageKey, next ? 'Y' : 'N')
       }
 
       return next

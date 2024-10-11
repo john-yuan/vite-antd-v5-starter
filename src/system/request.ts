@@ -5,8 +5,12 @@ import { API_BASE_URL } from './env'
 
 const STORAGE_KEY = 'auth_token'
 
-export function setAuthToken(token: string) {
-  localStorage.setItem(STORAGE_KEY, token)
+export function setAuthToken(token: string | null) {
+  if (token == null) {
+    localStorage.removeItem(STORAGE_KEY)
+  } else {
+    localStorage.setItem(STORAGE_KEY, token)
+  }
 }
 
 export function getAuthToken() {

@@ -73,8 +73,6 @@ export default function Router() {
     const createRouter =
       ROUTER_TYPE === 'hash' ? createHashRouter : createBrowserRouter
 
-    console.log(pageRoutes)
-
     return createRouter([
       {
         path: '*',

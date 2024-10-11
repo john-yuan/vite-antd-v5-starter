@@ -2,45 +2,46 @@ import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import type { ColumnType, TableProps } from 'antd/es/table'
 import type { QueryFormField } from '../QueryForm/types'
 import type { CursorPageChangeEvent, CursorPageInfo } from '../CursorPagination'
+import type { ColumnInfo } from './components/QueryTableSettings'
 import type {
   QueryTableColumn,
-  QueryTableExtraItem,
-  QueryTableField,
+  QueryTableToolbarItem,
   QueryTablePageInfo,
   QueryTableParams,
   QueryTableRef,
   QueryTableSearchFn
 } from './types'
-import Table from 'antd/es/table'
 import QueryForm from '../QueryForm'
 import CursorPagination from '../CursorPagination'
 import NumberPagination from '../NumberPagination'
-import { ReloadOutlined } from '@ant-design/icons'
+import QueryTableSettings from './components/QueryTableSettings'
+import { Popover, Table } from 'antd'
+import { ReloadOutlined, SettingOutlined } from '@ant-design/icons'
 import { useQueryFormRef } from '../QueryForm/hooks'
+import { useQueryTableSettings } from './components/QueryTableSettings/hooks'
 import css from './index.module.less'
 
 const MemoedTable = React.memo(Table)
 export type RowSelection<T = any> = Required<TableProps<T>>['rowSelection']
 
-export type ColumnInfo = {
-  key: string
-  name?: string | React.ReactNode
-  fixed?: 'left' | 'right'
-  hidden?: boolean
-  hideInSettings?: boolean
-}
-
 function Toolbar({
   title,
   titleNode,
   extraToolbarItems,
-  reload
+  reload,
+  columns,
+  setColumns,
+  onReset
 }: {
   title?: string
   titleNode?: React.ReactNode
-  extraToolbarItems?: QueryTableExtraItem[]
+  extraToolbarItems?: QueryTableToolbarItem[]
+  columns: ColumnInfo[]
+  setColumns: (columns: ColumnInfo[]) => void
+  onReset: () => void
   reload?: () => void
 }) {
+  const [settingsVisible, setSettingsVisible] = useState(false)
   let text = title
 
   if (titleNode) {
@@ -56,23 +57,46 @@ function Toolbar({
           {el.content}
         </div>
       ))}
+
       {reload ? (
         <div className={css.action}>
           <ReloadOutlined className={css.icon} onClick={reload} />
         </div>
       ) : null}
+      <div className={css.action}>
+        <Popover
+          open={settingsVisible}
+          onOpenChange={setSettingsVisible}
+          placement="leftBottom"
+          align={{ offset: [-10, -7] }}
+          trigger={['click']}
+          rootClassName={css.overlay}
+          content={
+            <QueryTableSettings
+              listClassName={css.list}
+              columns={columns}
+              onReset={() => {
+                setSettingsVisible(false)
+                onReset()
+              }}
+              onChange={(cols) => {
+                setSettingsVisible(false)
+                setColumns(cols)
+              }}
+            />
+          }
+        >
+          <SettingOutlined />
+        </Popover>
+      </div>
     </div>
   )
 }
 
-function useColumns(
-  columns: QueryTableColumn[],
-  extraQueryFields?: QueryTableField[]
-) {
+function useColumns(columns: QueryTableColumn[]) {
   return useMemo(() => {
     let totalWidth = 0
 
-    const queryFields: QueryTableField[] = []
     const settingColumns: ColumnInfo[] = []
     const columnMap: Record<string, ColumnType<any>> = {}
 
@@ -92,11 +116,23 @@ function useColumns(
         render = (_, row) => <ColComponent data={row} />
       }
 
-      const dataIndex = col.dataIndex || col.key
+      let colKey = col.key ?? col.dataIndex
+
+      if (colKey == null) {
+        if (typeof col.title === 'string' && col.title) {
+          colKey = col.title
+        } else if (typeof col.settingName === 'string' && col.settingName) {
+          colKey = col.settingName
+        } else {
+          colKey = `${index}`
+        }
+      }
+
       const item: ColumnInfo = {
-        key: dataIndex || `${index}`,
+        key: colKey,
         name: col.settingName || '',
         fixed: col.fixed,
+        hidden: col.defaultHidden,
         hideInSettings: col.hideInSettings
       }
 
@@ -110,46 +146,15 @@ function useColumns(
         }
       }
 
-      if (col.query) {
-        if (col.query === true) {
-          if (dataIndex) {
-            const field: QueryFormField = {
-              label: dataIndex,
-              name: dataIndex
-            }
-            if (typeof col.title === 'string') {
-              field.label = col.title
-            }
-            queryFields.push({ order: col.queryOrder, field })
-          }
-        } else {
-          const field: QueryFormField = {
-            label: col.query.label || '',
-            name: col.query.name || dataIndex || '',
-            ...col.query
-          }
-          if (!field.label) {
-            if (typeof col.title === 'string') {
-              field.label = col.title
-            } else {
-              field.label = dataIndex || ''
-            }
-          }
-          if (field.name) {
-            queryFields.push({ order: col.queryOrder, field })
-          }
-        }
-      }
-
       if (!render && col.valueEnum) {
         const map = col.valueEnum
         render = (val: any) => <>{map[val]}</>
       }
 
       const finalCol: ColumnType<any> = {
-        key: col.key || col.dataIndex,
-        dataIndex: col.dataIndex || col.key,
-        title: col.title || col.dataIndex || col.key,
+        key: colKey,
+        dataIndex: col.dataIndex ?? col.key,
+        title: col.title ?? col.dataIndex ?? col.key,
         fixed: col.fixed,
         align: col.align,
         width,
@@ -157,39 +162,61 @@ function useColumns(
       }
 
       if (finalCol.key) {
-        columnMap[finalCol.key as string] = finalCol
+        columnMap[colKey] = finalCol
       }
 
       return finalCol
     })
 
-    if (extraQueryFields) {
-      extraQueryFields.forEach((el) => {
-        queryFields.push(el)
-      })
-    }
-
-    queryFields.sort((a, b) => (a.order || 0) - (b.order || 0))
-
     return {
       cols,
       columnMap,
       settingColumns,
-      scroll: { x: totalWidth },
-      fields: queryFields.map((el) => el.field)
+      scroll: { x: totalWidth }
     }
-  }, [columns, extraQueryFields])
+  }, [columns])
 }
 
 export interface Props {
+  /**
+   * 查询表达字段列表，如果不设置或者长度为 0，则不显示查询表单
+   */
+  queryFields?: QueryFormField[]
+
+  /**
+   * 表格的列定义
+   */
   columns: QueryTableColumn[]
-  extraQueryFields?: QueryTableField[]
+
+  /**
+   * 用于获取每行数据 key 的属性名称，默认为 id
+   */
   rowKey?: string
+
+  /**
+   * 表格引用，可用于出发搜索等
+   */
   tableRef?: QueryTableRef
-  defaultPageSize?: 10 | 20 | 50 | 100
+
+  /**
+   * 初始分页大小，默认为 50
+   */
+  initialPageSize?: 10 | 20 | 50 | 100
+
+  /**
+   * 表格标题
+   */
   title?: string
+
+  /**
+   * 表格标题，优先级高于 title
+   */
   titleNode?: React.ReactNode
-  extraToolbarItems?: QueryTableExtraItem[]
+
+  /**
+   * 右上角工具栏
+   */
+  toolbar?: QueryTableToolbarItem[]
 
   /**
    * 分页模式
@@ -197,12 +224,7 @@ export interface Props {
    * - `number` 数字模式
    * - `cursor` 游标模式
    */
-  paginationMode?: 'number' | 'cursor'
-
-  /**
-   * 是否隐藏分页
-   */
-  hidePagination?: boolean | 'show-total-only'
+  paginationMode?: 'number' | 'cursor' | 'hidden' | 'show-total-only'
 
   /**
    * 是否隐藏搜索表单
@@ -230,14 +252,14 @@ export interface Props {
   initialData?: any[]
 
   /**
-   * 本地存储 KEY
+   * 本地存储 KEY，用于记录表格列设置和查询表单展开收起状态
    */
   storageKey?: string
 
   /**
    * 本地存储版本
    */
-  storageVersion?: string
+  storageVersion?: string | number
 
   /**
    * 列选择操作
@@ -263,19 +285,19 @@ export interface Props {
 function InnerQueryTable({
   title,
   titleNode,
-  extraToolbarItems,
+  toolbar,
   columns,
-  extraQueryFields,
+  queryFields,
   rowKey,
   tableRef,
-  defaultPageSize,
-  paginationMode = 'number',
-  hidePagination,
+  initialPageSize,
+  paginationMode: rawPaginationMode = 'number',
   hideForm,
   hideTitle,
   manual,
   initialData,
   storageKey,
+  storageVersion,
   rowSelection,
   getResetValues,
   stickyOffset,
@@ -289,7 +311,7 @@ function InnerQueryTable({
   }>({ loading: false, data: initialData || [] })
 
   const [cursorPage, setCursorPage] = useState<CursorPageInfo>({
-    size: defaultPageSize || 50
+    size: initialPageSize || 50
   })
 
   const [numberPage, setNumberPage] = useState<{
@@ -300,8 +322,11 @@ function InnerQueryTable({
   }>({
     page: 1,
     total: 0,
-    size: defaultPageSize || 50
+    size: initialPageSize || 50
   })
+
+  const paginationMode: 'number' | 'cursor' =
+    rawPaginationMode === 'cursor' ? 'cursor' : 'number'
 
   const paramsRef = useRef<QueryTableParams>({
     paginationMode,
@@ -315,12 +340,75 @@ function InnerQueryTable({
     }
   })
 
-  const { fields, cols, scroll } = useColumns(columns, extraQueryFields)
+  const {
+    settingColumns: rawSettingColumns,
+    columnMap,
+    scroll
+  } = useColumns(columns)
+
+  const [settingColumns, setSettingColumns] = useQueryTableSettings({
+    columns: rawSettingColumns,
+    storageKey,
+    storageVersion
+  })
+
+  const finalColumns = useMemo(() => {
+    const leftCols: ColumnInfo[] = []
+    const disabledLeftCols: ColumnInfo[] = []
+    const centerCols: ColumnInfo[] = []
+    const rightCols: ColumnInfo[] = []
+    const disabledRightCols: ColumnInfo[] = []
+
+    settingColumns.forEach((el) => {
+      if (el.hideInSettings || !el.hidden) {
+        if (el.fixed === 'left') {
+          if (el.hideInSettings) {
+            disabledLeftCols.push(el)
+          } else {
+            leftCols.push(el)
+          }
+        } else if (el.fixed === 'right') {
+          if (el.hideInSettings) {
+            disabledRightCols.push(el)
+          } else {
+            rightCols.push(el)
+          }
+        } else {
+          centerCols.push(el)
+        }
+      }
+    })
+
+    const finalCols: ColumnType<any>[] = []
+    const add = (list: ColumnInfo[]) => {
+      list.forEach((el) => {
+        const col = columnMap[el.key]
+        if (col) {
+          finalCols.push(
+            col.fixed !== el.fixed
+              ? {
+                  ...col,
+                  fixed: el.fixed
+                }
+              : col
+          )
+        }
+      })
+    }
+
+    add(disabledLeftCols)
+    add(leftCols)
+    add(centerCols)
+    add(rightCols)
+    add(disabledRightCols)
+
+    return finalCols
+  }, [settingColumns, columnMap])
 
   const ref = useRef({
     onSearch,
     cursorPage,
-    defaultPageSize,
+    initialPageSize,
     reqLock: 0
   })
 
@@ -444,17 +532,6 @@ function InnerQueryTable({
     [paramsRef, execSearch]
   )
 
-  const titleRender = useMemo(() => {
-    return () => (
-      <Toolbar
-        title={title}
-        titleNode={titleNode}
-        extraToolbarItems={extraToolbarItems}
-        reload={execSearch}
-      />
-    )
-  }, [title, titleNode, extraToolbarItems, execSearch])
-
   const initRef = useRef({ formRef, hideForm, execSearch, manual, initialData })
 
   initRef.current.execSearch = execSearch
@@ -495,6 +572,7 @@ function InnerQueryTable({
 
   const total =
     paginationMode === 'cursor' ? cursorPage.total : numberPage.total
+
   const sticky = useMemo(
     () =>
       stickyOffset
@@ -507,31 +585,45 @@ function InnerQueryTable({
 
   return (
     <>
-      {!hideForm && (
+      {!hideForm && queryFields?.length ? (
         <QueryForm
           manual
           formRef={formRef}
-          fields={fields}
+          fields={queryFields}
           loading={state.loading}
           getResetValues={getResetValues}
           onSearch={handleSearch}
           storageKey={storageKey ? `${storageKey}_closed` : undefined}
         />
-      )}
+      ) : null}
       {between}
       <MemoedTable
         sticky={sticky}
         className={css.table}
-        title={hideTitle ? undefined : titleRender}
+        title={
+          hideTitle
+            ? undefined
+            : () => (
+                <Toolbar
+                  title={title}
+                  titleNode={titleNode}
+                  extraToolbarItems={toolbar}
+                  reload={execSearch}
+                  columns={settingColumns}
+                  setColumns={setSettingColumns}
+                  onReset={() => setSettingColumns(rawSettingColumns)}
+                />
+              )
+        }
         pagination={false}
         rowKey={rowKey || 'id'}
         loading={state.loading}
         dataSource={state.data}
         scroll={scroll}
-        columns={cols}
+        columns={finalColumns}
         rowSelection={rowSelection}
       />
-      {!hidePagination && (
+      {rawPaginationMode === 'number' || rawPaginationMode === 'cursor' ? (
         <>
           {paginationMode === 'cursor' ? (
             <CursorPagination
@@ -547,12 +639,15 @@ function InnerQueryTable({
             />
           )}
         </>
-      )}
-      {hidePagination === 'show-total-only' && (
-        <div className={css.emptyPage}>
+      ) : null}
+      {rawPaginationMode === 'show-total-only' ? (
+        <div className={css.totalPage}>
           {total != null ? `共 ${total} 条数据` : null}
         </div>
-      )}
+      ) : null}
+      {rawPaginationMode === 'hidden' ? (
+        <div className={css.emptyPage} />
+      ) : null}
     </>
   )
 }

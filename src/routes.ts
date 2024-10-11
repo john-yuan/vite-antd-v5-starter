@@ -22,6 +22,11 @@ export const routes: RouteConfig[] = [
         label: 'Modals',
         path: '/examples/modals',
         component: lazy(() => import('./pages/Examples/Modals'))
+      },
+      {
+        label: 'QueryTable',
+        path: '/examples/query_table',
+        component: lazy(() => import('./pages/Examples/QueryTable'))
       }
     ]
   }

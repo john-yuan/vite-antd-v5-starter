@@ -2,23 +2,23 @@ import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import type { ColumnType, TableProps } from 'antd/es/table'
 import type { QueryFormField } from '../QueryForm/types'
 import type { CursorPageChangeEvent, CursorPageInfo } from '../CursorPagination'
+import type { ColumnInfo } from './components/QueryTableSettings'
 import type {
   QueryTableColumn,
-  QueryTableExtraItem,
+  QueryTableToolbarItem,
   QueryTablePageInfo,
   QueryTableParams,
   QueryTableRef,
   QueryTableSearchFn
 } from './types'
-import Table from 'antd/es/table'
 import QueryForm from '../QueryForm'
 import CursorPagination from '../CursorPagination'
 import NumberPagination from '../NumberPagination'
+import QueryTableSettings from './components/QueryTableSettings'
+import { Popover, Table } from 'antd'
 import { ReloadOutlined, SettingOutlined } from '@ant-design/icons'
 import { useQueryFormRef } from '../QueryForm/hooks'
-import type { ColumnInfo } from './components/QueryTableSettings';
-import QueryTableSettings from './components/QueryTableSettings'
-import { Popover } from 'antd'
+import { useQueryTableSettings } from './components/QueryTableSettings/hooks'
 import css from './index.module.less'
 
 const MemoedTable = React.memo(Table)
@@ -35,7 +35,7 @@ function Toolbar({
 }: {
   title?: string
   titleNode?: React.ReactNode
-  extraToolbarItems?: QueryTableExtraItem[]
+  extraToolbarItems?: QueryTableToolbarItem[]
   columns: ColumnInfo[]
   setColumns: (columns: ColumnInfo[]) => void
   onReset: () => void
@@ -216,7 +216,7 @@ export interface Props {
   /**
    * 右上角工具栏
    */
-  toolbar?: QueryTableExtraItem[]
+  toolbar?: QueryTableToolbarItem[]
 
   /**
    * 分页模式
@@ -252,14 +252,14 @@ export interface Props {
   initialData?: any[]
 
   /**
-   * 本地存储 KEY
+   * 本地存储 KEY，用于记录表格列设置和查询表单展开收起状态
    */
   storageKey?: string
 
   /**
    * 本地存储版本
    */
-  storageVersion?: string
+  storageVersion?: string | number
 
   /**
    * 列选择操作
@@ -297,6 +297,7 @@ function InnerQueryTable({
   manual,
   initialData,
   storageKey,
+  storageVersion,
   rowSelection,
   getResetValues,
   stickyOffset,
@@ -344,23 +345,34 @@ function InnerQueryTable({
     columnMap,
     scroll
   } = useColumns(columns)
-  const [settingColumns, setSettingColumns] = useState(rawSettingColumns)
 
-  useEffect(() => {
-    setSettingColumns(rawSettingColumns)
-  }, [rawSettingColumns])
+  const [settingColumns, setSettingColumns] = useQueryTableSettings({
+    columns: rawSettingColumns,
+    storageKey,
+    storageVersion
+  })
 
   const finalColumns = useMemo(() => {
     const leftCols: ColumnInfo[] = []
+    const disabledLeftCols: ColumnInfo[] = []
     const centerCols: ColumnInfo[] = []
     const rightCols: ColumnInfo[] = []
+    const disabledRightCols: ColumnInfo[] = []
 
     settingColumns.forEach((el) => {
-      if (el.hideInSettings ? true : !el.hidden) {
+      if (el.hideInSettings || !el.hidden) {
         if (el.fixed === 'left') {
-          leftCols.push(el)
+          if (el.hideInSettings) {
+            disabledLeftCols.push(el)
+          } else {
+            leftCols.push(el)
+          }
         } else if (el.fixed === 'right') {
-          rightCols.push(el)
+          if (el.hideInSettings) {
+            disabledRightCols.push(el)
+          } else {
+            rightCols.push(el)
+          }
         } else {
           centerCols.push(el)
         }
@@ -384,9 +396,11 @@ function InnerQueryTable({
       })
     }
 
+    add(disabledLeftCols)
     add(leftCols)
     add(centerCols)
     add(rightCols)
+    add(disabledRightCols)
 
     return finalCols
   }, [settingColumns, columnMap])
@@ -518,20 +532,6 @@ function InnerQueryTable({
     [paramsRef, execSearch]
   )
 
-  const titleRender = useMemo(() => {
-    return () => (
-      <Toolbar
-        title={title}
-        titleNode={titleNode}
-        extraToolbarItems={toolbar}
-        reload={execSearch}
-        columns={settingColumns}
-        setColumns={setSettingColumns}
-        onReset={() => setSettingColumns(rawSettingColumns)}
-      />
-    )
-  }, [title, titleNode, toolbar, execSearch])
-
   const initRef = useRef({ formRef, hideForm, execSearch, manual, initialData })
 
   initRef.current.execSearch = execSearch
@@ -600,7 +600,21 @@ function InnerQueryTable({
       <MemoedTable
         sticky={sticky}
         className={css.table}
-        title={hideTitle ? undefined : titleRender}
+        title={
+          hideTitle
+            ? undefined
+            : () => (
+                <Toolbar
+                  title={title}
+                  titleNode={titleNode}
+                  extraToolbarItems={toolbar}
+                  reload={execSearch}
+                  columns={settingColumns}
+                  setColumns={setSettingColumns}
+                  onReset={() => setSettingColumns(rawSettingColumns)}
+                />
+              )
+        }
         pagination={false}
         rowKey={rowKey || 'id'}
         loading={state.loading}

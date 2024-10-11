@@ -1,8 +1,9 @@
 import type { QueryFormField } from '@/components/QueryForm/types'
 import QueryTable from '@/components/QueryTable'
-import type {
-  QueryTableColumn,
-  QueryTableSearchFn
+import type { QueryTableToolbarItem } from '@/components/QueryTable/types'
+import {
+  type QueryTableColumn,
+  type QueryTableSearchFn
 } from '@/components/QueryTable/types'
 import { sleep } from '@/utils/sleep'
 import { Button } from 'antd'
@@ -203,7 +204,8 @@ export default function QueryTablePage() {
       {
         key: 'op',
         title: '操作',
-        fixed: 'right'
+        fixed: 'right',
+        hideInSettings: true
       }
     ],
     []
@@ -213,7 +215,33 @@ export default function QueryTablePage() {
     () => [
       {
         name: 'title',
-        label: 'Title'
+        label: '标题'
+      },
+      {
+        name: 'category',
+        label: '类目'
+      },
+      {
+        name: 'brand',
+        label: '品牌'
+      },
+      {
+        name: 'price',
+        label: '价格'
+      },
+      {
+        name: 'discount',
+        label: '折扣'
+      }
+    ],
+    []
+  )
+
+  const toolbar = useMemo<QueryTableToolbarItem[]>(
+    () => [
+      {
+        key: 'export',
+        content: <Button size="small">导出数据</Button>
       }
     ],
     []
@@ -225,16 +253,8 @@ export default function QueryTablePage() {
       queryFields={queryFields}
       columns={columns}
       onSearch={search}
-      toolbar={[
-        {
-          key: 'export',
-          content: (
-            <Button size="small" type="primary">
-              Export
-            </Button>
-          )
-        }
-      ]}
+      storageKey="example_products_table"
+      toolbar={toolbar}
     />
   )
 }

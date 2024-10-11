@@ -7,7 +7,7 @@ export interface QueryTableRef {
   triggerSearch: () => void
 }
 
-export interface QueryTableExtraItem {
+export interface QueryTableToolbarItem {
   key: string | number
   content: React.ReactNode
 }

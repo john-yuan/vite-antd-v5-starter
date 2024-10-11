@@ -33,7 +33,7 @@ export default function QueryTableSettings({
 }: Props) {
   const [columns, setColumns] = useState(propColumns)
   const { leftCols, rightCols, centerCols, visibleCount, totalCount } =
-    splitColumns(columns, true)
+    splitColumns(columns)
 
   useEffect(() => {
     setColumns(propColumns)
@@ -146,8 +146,6 @@ function List({
             const old = columns[target]
             next[target] = col
             next[i] = old
-
-            console.log(next)
             onMove(next)
           }}
           onUpdate={onUpdate}
@@ -245,7 +243,7 @@ function Row({
   )
 }
 
-function splitColumns(columns: ColumnInfo[], skipHideInSettings?: boolean) {
+function splitColumns(columns: ColumnInfo[]) {
   const leftCols: ColumnInfo[] = []
   const centerCols: ColumnInfo[] = []
   const rightCols: ColumnInfo[] = []
@@ -254,7 +252,7 @@ function splitColumns(columns: ColumnInfo[], skipHideInSettings?: boolean) {
   let visibleCount = 0
 
   columns.forEach((el) => {
-    if (skipHideInSettings && el.hideInSettings) {
+    if (el.hideInSettings) {
       return
     }
     totalCount += 1

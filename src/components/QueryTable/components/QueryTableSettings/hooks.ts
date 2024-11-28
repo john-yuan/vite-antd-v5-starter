@@ -34,7 +34,7 @@ export function useQueryTableSettings({
       ref.current.storageVersion = storageVersion
       setColumns(getColumns(columns, storageKey, storageVersion))
     }
-  }, [ref, columns, storageKey, storageVersion])
+  }, [ref, setColumns, columns, storageKey, storageVersion])
 
   useEffect(() => {
     if (storageKey) {

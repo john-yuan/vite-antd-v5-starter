@@ -1,6 +1,6 @@
 import { routes } from '@/routes'
 import { sleep } from '@/utils/sleep'
-import type { AppState } from '@/types'
+import type { AppContextValue } from './context/AppContext'
 
 /**
  * Get the initial app state. If this function returns `null`, means that
@@ -8,7 +8,7 @@ import type { AppState } from '@/types'
  *
  * @returns return a `AppState` if user logged in, otherwise returns `null`.
  */
-export async function getInitialAppState(): Promise<AppState | null> {
+export async function getInitialAppState(): Promise<AppContextValue | null> {
   // TODO initialize the app state.
 
   await sleep(500)

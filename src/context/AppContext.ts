@@ -1,19 +1,23 @@
-import type { AppState } from '@/types'
 import { createContext } from 'react'
+import type { CurrentUser, RouteConfig } from '@/types'
 
-export interface AppContextValue {
-  appState: AppState
-  setAppState: React.Dispatch<React.SetStateAction<AppState>>
-  logout: () => void
+export type AppContextValue = {
+  currentUser: CurrentUser
+  routes: RouteConfig[]
 }
 
-export const DEFAULT_APP_STATE: AppState = {
-  currentUser: { id: 0, account: 'anonymous' },
-  routes: []
-}
+export type MutateAppContextFn = (prev: AppContextValue) => AppContextValue
+export type SetAppContextFn = (
+  arg: AppContextValue | MutateAppContextFn
+) => void
 
 export const AppContext = createContext<AppContextValue>({
-  appState: DEFAULT_APP_STATE,
-  setAppState: () => {},
-  logout: () => {}
+  currentUser: {
+    id: -1,
+    account: 'anonymous'
+  },
+  routes: []
 })
+
+export const SetAppContext = createContext<SetAppContextFn>(() => {})
+export const LogoutContext = createContext<() => void>(() => {})

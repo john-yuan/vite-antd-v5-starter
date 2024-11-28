@@ -1,5 +1,4 @@
 import { useMemo, useRef } from 'react'
-import { useAppState } from '@/hooks/useAppState'
 
 import {
   Navigate,
@@ -14,10 +13,12 @@ import type { RouteObject } from 'react-router-dom'
 import type { ResolvedRouteObject, RouteConfig } from '@/types'
 
 import Layout from '../Layout'
+import UiContextProvider from '../UiContextProvider'
+import { useAppContext } from '@/hooks/useAppContext'
 import { ROUTER_TYPE } from '@/system/env'
 
 export default function Router() {
-  const { routes } = useAppState()
+  const { routes } = useAppContext()
   const ref = useRef({ idPrefix: 0 })
   const router = useMemo(() => {
     ref.current.idPrefix += 1
@@ -76,11 +77,19 @@ export default function Router() {
     return createRouter([
       {
         path: '*',
-        element: <Layout routes={resolvedRoutes} />
+        element: (
+          <UiContextProvider>
+            <Layout routes={resolvedRoutes} />
+          </UiContextProvider>
+        )
       },
       {
         path: '/',
-        element: <Container defaultPath={defaultPath} />,
+        element: (
+          <UiContextProvider>
+            <Container defaultPath={defaultPath} />
+          </UiContextProvider>
+        ),
         children: pageRoutes
       }
     ])

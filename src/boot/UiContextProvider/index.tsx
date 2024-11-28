@@ -1,25 +1,17 @@
-import React, { useCallback, useEffect, useMemo, useState } from 'react'
-import { Alert, Drawer, Modal } from 'antd'
+import React, { useCallback, useState } from 'react'
+import { Drawer, Modal, type DrawerProps, type ModalProps } from 'antd'
 import { DrawerContext } from '@/context/DrawerContext'
 import { ModalContext } from '@/context/ModalContext'
-import { AppContext, DEFAULT_APP_STATE } from '@/context/AppContext'
-import { getInitialAppState } from '@/getInitialAppState'
-import type { DrawerProps, ModalProps } from 'antd'
-import type { AppState } from '@/types'
-import type { AppContextValue } from '@/context/AppContext'
 import type { ShowDrawerFn } from '@/context/DrawerContext'
 import type { ShowModalFn } from '@/context/ModalContext'
-import RawLogin from '../Login'
-import Loading from '../Loading'
 
 let key = 0
-const Login = React.memo(RawLogin)
 
-export default function Context({ children }: { children?: React.ReactNode }) {
-  return <UI children={children} />
-}
-
-function UI({ children }: { children?: React.ReactNode }) {
+export default function UiContextProvider({
+  children
+}: {
+  children?: React.ReactNode
+}) {
   const [modals, setModals] = useState<
     {
       key: number
@@ -156,129 +148,41 @@ function UI({ children }: { children?: React.ReactNode }) {
   return (
     <ModalContext.Provider value={showModal}>
       <DrawerContext.Provider value={showDrawer}>
-        <Auth
-          ui={
-            <>
-              {modals.some((el) => el.open) ? (
-                <div
-                  style={{
-                    position: 'fixed',
-                    left: 0,
-                    top: 0,
-                    right: 0,
-                    bottom: 0,
-                    zIndex: 10
-                  }}
-                />
-              ) : null}
-              {modals.map((el) => (
-                <Modal
-                  {...el.props}
-                  key={el.key}
-                  open={el.open}
-                  onCancel={el.onCancel}
-                />
-              ))}
-              {drawers.map((el) => (
-                <Drawer
-                  {...el.props}
-                  key={el.key}
-                  open={el.open}
-                  onClose={el.onClose}
-                />
-              ))}
-            </>
-          }
-          authorized={children}
-        />
+        {children}
+
+        {modals.some((el) => el.open) ? (
+          <div
+            style={{
+              position: 'fixed',
+              left: 0,
+              top: 0,
+              right: 0,
+              bottom: 0,
+              zIndex: 10
+            }}
+          />
+        ) : null}
+
+        {modals.map((el) => (
+          <Modal
+            {...el.props}
+            key={el.key}
+            open={el.open}
+            onCancel={el.onCancel}
+          />
+        ))}
+
+        {drawers.map((el) => (
+          <Drawer
+            {...el.props}
+            key={el.key}
+            open={el.open}
+            onClose={el.onClose}
+          />
+        ))}
       </DrawerContext.Provider>
     </ModalContext.Provider>
   )
-}
-
-function Auth({
-  ui,
-  authorized
-}: {
-  ui?: React.ReactNode
-  authorized?: React.ReactNode
-}) {
-  const [appState, setAppState] = useState<AppState>(DEFAULT_APP_STATE)
-  const [state, setState] = useState<{
-    loading?: boolean
-    hasError?: boolean
-    errorMessage?: string
-    unauthorized?: boolean
-  }>({ loading: true })
-
-  const logout = useCallback(() => {
-    setState({ unauthorized: true })
-    setAppState(DEFAULT_APP_STATE)
-  }, [])
-
-  const context = useMemo<AppContextValue>(
-    () => ({
-      appState,
-      setAppState,
-      logout
-    }),
-    [appState, setAppState, logout]
-  )
-
-  const render = (content?: React.ReactNode) => {
-    return (
-      <AppContext.Provider value={context}>
-        {content}
-        {ui}
-      </AppContext.Provider>
-    )
-  }
-
-  const init = useCallback(() => {
-    setState((prev) => (prev.loading ? prev : { loading: true }))
-    getInitialAppState()
-      .then((initialAppState) => {
-        if (initialAppState) {
-          setAppState(initialAppState)
-          setState({})
-        } else {
-          setState({ unauthorized: true })
-        }
-      })
-      .catch((err) => {
-        setState({
-          hasError: true,
-          errorMessage: err ? `${err}` : 'Unknown error.'
-        })
-      })
-  }, [])
-
-  useEffect(() => {
-    init()
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [])
-
-  if (state.unauthorized) {
-    return render(<Login onSuccess={init} />)
-  }
-
-  if (state.loading) {
-    return render(<Loading />)
-  }
-
-  if (state.hasError) {
-    return render(
-      <Alert
-        closable
-        type="error"
-        message={state.errorMessage}
-        style={{ margin: 20 }}
-        onClick={logout}
-      />
-    )
-  }
-
-  return render(authorized)
 }
 
 function getNextKey() {

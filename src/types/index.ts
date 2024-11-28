@@ -1,8 +1,3 @@
-export interface AppState {
-  currentUser: CurrentUser
-  routes: RouteConfig[]
-}
-
 export interface CurrentUser {
   id: number
   account: string

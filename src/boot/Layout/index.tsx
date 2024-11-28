@@ -10,9 +10,9 @@ import {
 import { Dropdown, Menu, Spin } from 'antd'
 import { Link, useNavigate } from 'react-router-dom'
 import { DownOutlined } from '@ant-design/icons'
-import { useAppContext } from '@/hooks/useAppContext'
 import { useCurrentUser } from '@/hooks/useCurrentUser'
 import { useConfirm } from '@/hooks/useConfirm'
+import { useLogout } from '@/hooks/useLogout'
 import type { MouseEvent } from 'react'
 import type { GetProp, MenuProps } from 'antd'
 import type { ResolvedRouteObject } from '@/types'
@@ -66,7 +66,7 @@ export default function Layout({
 
 function SiteHeader() {
   const user = useCurrentUser()
-  const { logout } = useAppContext()
+  const logout = useLogout()
   const confirm = useConfirm()
   return (
     <header className={css.header}>
